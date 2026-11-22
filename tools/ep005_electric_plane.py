@@ -98,31 +98,39 @@ def s3(t, lt):
 
 
 def s4(t, lt):
+    return xcut(t, lt, 4.6, _s4_a, _s4_b)
+
+
+def _s4_a(t, lt):
     img = SKY.copy(); d = ImageDraw.Draw(img)
     clouds_fast(d, t, speed=120)
-    if lt < 4.6:
-        # close-up of the wing fans
-        draw_eplane(img, 520, 1150, 2.0, t=t)
-        sticker(img, 480, 330, "10 ELECTRIC FANS", 86, C["teal"], fg=C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 520, "5 PER WING", 90, C["white"], scale=pop(prog(lt, 1.8, 0.35)), rot=2)
-    else:
-        l2 = lt - 4.6
-        # gag: plane flying off trailing an absurdly long charging cable from a wall plug
-        d.rectangle([0, S(1330), SW, SH], fill=(110, 180, 100))
-        d.rounded_rectangle([S(80), S(1180), S(200), S(1330)], radius=S(16), fill=C["white"], outline=C["ink"], width=S(6))
-        for yy in (1225, 1275):
-            d.rectangle([S(120), S(yy), S(160), S(yy + 22)], fill=C["ink"])
-        px = 520 + 380 * ease_in_out(prog(l2, 0.2, 3.0)); py = 760 - 120 * prog(l2, 0.2, 3.0)
-        pts = [(140, 1250), (220, 1300), (320, 1120)]
-        for i in range(1, 12):
-            u = i / 11
-            pts.append((320 + (px - 420 - 320) * u, 1120 + (py + 60 - 1120) * u + 150 * math.sin(u * math.pi * 3 + l2 * 3) * (1 - u)))
-        d.line([(S(x), S(y)) for x, y in pts], fill=C["ink"], width=S(16), joint="curve")
-        d.line([(S(x), S(y)) for x, y in pts], fill=(255, 206, 60), width=S(8), joint="curve")
-        draw_eplane(img, px, py, 0.7, rot=6, t=t)
-        sticker(img, 480, 330, "UH... LONG CABLE?", 84, C["pink"], fg=C["white"], scale=pop(prog(l2, 0.6, 0.35)), rot=-3)
+    # close-up of the wing fans
+    draw_eplane(img, 520, 1150, 2.0, t=t)
+    sticker(img, 480, 330, "10 ELECTRIC FANS", 86, C["teal"], fg=C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 520, "5 PER WING", 90, C["white"], scale=pop(prog(lt, 1.8, 0.35)), rot=2)
     return img
 
+
+def _s4_b(t, l2):
+    lt = l2 + 4.6
+    img = SKY.copy(); d = ImageDraw.Draw(img)
+    clouds_fast(d, t, speed=120)
+    l2 = lt - 4.6
+    # gag: plane flying off trailing an absurdly long charging cable from a wall plug
+    d.rectangle([0, S(1330), SW, SH], fill=(110, 180, 100))
+    d.rounded_rectangle([S(80), S(1180), S(200), S(1330)], radius=S(16), fill=C["white"], outline=C["ink"], width=S(6))
+    for yy in (1225, 1275):
+        d.rectangle([S(120), S(yy), S(160), S(yy + 22)], fill=C["ink"])
+    px = 520 + 380 * ease_in_out(prog(l2, 0.2, 3.0)); py = 760 - 120 * prog(l2, 0.2, 3.0)
+    pts = [(140, 1250), (220, 1300), (320, 1120)]
+    for i in range(1, 12):
+        u = i / 11
+        pts.append((320 + (px - 420 - 320) * u, 1120 + (py + 60 - 1120) * u + 150 * math.sin(u * math.pi * 3 + l2 * 3) * (1 - u)))
+    d.line([(S(x), S(y)) for x, y in pts], fill=C["ink"], width=S(16), joint="curve")
+    d.line([(S(x), S(y)) for x, y in pts], fill=(255, 206, 60), width=S(8), joint="curve")
+    draw_eplane(img, px, py, 0.7, rot=6, t=t)
+    sticker(img, 480, 330, "UH... LONG CABLE?", 84, C["pink"], fg=C["white"], scale=pop(prog(l2, 0.6, 0.35)), rot=-3)
+    return img
 
 def s5(t, lt):
     img = SKY.copy(); d = ImageDraw.Draw(img)
@@ -138,58 +146,78 @@ def s5(t, lt):
 
 
 def s6(t, lt):
+    return xcut(t, lt, 3.2, _s6_a, _s6_b)
+
+
+def _s6_a(t, lt):
     img = SKY.copy(); d = ImageDraw.Draw(img)
     clouds_fast(d, t, speed=100)
-    if lt < 3.2:
-        # giant balance scale
-        d.rectangle([S(0), S(1340), SW, SH], fill=(110, 180, 100))
-        d.polygon([(S(420), S(1340)), (S(600), S(1340)), (S(510), S(1220))], fill=C["ink"])
-        tilt = 0.12 * math.sin(lt * 3) * (1 - prog(lt, 0.0, 2.5))
-        d.line([(S(150), S(1220 + 300 * tilt)), (S(870), S(1220 - 300 * tilt))], fill=C["ink"], width=S(16))
-        draw_eplane(img, 510, 1110, 0.62, rot=0, t=0)
-        sticker(img, 480, 380, "~10 TONNES", 130, C["white"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
-    else:
-        l2 = lt - 3.2
-        d.rectangle([0, S(1300), SW, SH], fill=(110, 180, 100))
-        skyline(d, 60, 1300, 0.9); skyline(d, 700, 1300, 0.9, col=(150, 120, 170))
-        p = ease_in_out(prog(l2, 0.2, 3.8))
-        pts = [(S(180 + 640 * u), S(1100 - 380 * math.sin(u * math.pi))) for u in [i / 30 for i in range(int(30 * p) + 1)]]
-        if len(pts) > 1:
-            d.line(pts, fill=C["pink"], width=S(10))
-        ux = 180 + 640 * p; uy = 1100 - 380 * math.sin(p * math.pi)
-        draw_eplane(img, ux, uy, 0.35, rot=-30 * math.cos(p * math.pi), t=t)
-        sticker(img, 480, 330, "UP TO 400 KM", 110, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 520, "~250 MILES", 84, C["white"], scale=pop(prog(l2, 1.4, 0.35)), rot=2)
+    # giant balance scale
+    d.rectangle([S(0), S(1340), SW, SH], fill=(110, 180, 100))
+    d.polygon([(S(420), S(1340)), (S(600), S(1340)), (S(510), S(1220))], fill=C["ink"])
+    tilt = 0.12 * math.sin(lt * 3) * (1 - prog(lt, 0.0, 2.5))
+    d.line([(S(150), S(1220 + 300 * tilt)), (S(870), S(1220 - 300 * tilt))], fill=C["ink"], width=S(16))
+    draw_eplane(img, 510, 1110, 0.62, rot=0, t=0)
+    sticker(img, 480, 380, "~10 TONNES", 130, C["white"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
     return img
 
+
+def _s6_b(t, l2):
+    lt = l2 + 3.2
+    img = SKY.copy(); d = ImageDraw.Draw(img)
+    clouds_fast(d, t, speed=100)
+    l2 = lt - 3.2
+    d.rectangle([0, S(1300), SW, SH], fill=(110, 180, 100))
+    skyline(d, 60, 1300, 0.9); skyline(d, 700, 1300, 0.9, col=(150, 120, 170))
+    p = ease_in_out(prog(l2, 0.2, 3.8))
+    pts = [(S(180 + 640 * u), S(1100 - 380 * math.sin(u * math.pi))) for u in [i / 30 for i in range(int(30 * p) + 1)]]
+    if len(pts) > 1:
+        d.line(pts, fill=C["pink"], width=S(10))
+    ux = 180 + 640 * p; uy = 1100 - 380 * math.sin(p * math.pi)
+    draw_eplane(img, ux, uy, 0.35, rot=-30 * math.cos(p * math.pi), t=t)
+    sticker(img, 480, 330, "UP TO 400 KM", 110, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 520, "~250 MILES", 84, C["white"], scale=pop(prog(l2, 1.4, 0.35)), rot=2)
+    return img
 
 def s7(t, lt):
+    return xcut(t, lt, 5.0, _s7_a, _s7_b)
+
+
+def _s7_a(t, lt):
     img = RUNWAY.copy(); d = ImageDraw.Draw(img)
     draw_clouds(d, t)
-    if lt < 5.0:
-        n = 1 + int(18 * ease_out(prog(lt, 0.4, 3.6)))
-        for i in range(n):
-            x = 140 + (i % 5) * 180; y = 760 + (i // 5) * 150
-            draw_eplane(img, x, y + 8 * math.sin(lt * 3 + i), 0.16, t=t)
-        sticker(img, 480, 330, f"{n} TEST FLIGHTS", 92, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 1380 - 160, "NOBODY ABOARD", 70, C["yellow"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
-    else:
-        l2 = lt - 5.0
-        sc = pop(prog(l2, 0.1, 0.4))
-        if sc > 0.02:
-            lay = Image.new("RGBA", (S(620), S(760)), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
-            ld.rounded_rectangle([S(16), S(22), S(610), S(750)], radius=S(30), fill=C["ink"])
-            ld.rounded_rectangle([0, 0, S(594), S(728)], radius=S(30), fill=(255, 250, 235), outline=C["ink"], width=S(8))
-            text_center(ld, 297, 110, "SAFETY", 70); text_center(ld, 297, 190, "CERTIFICATE", 62)
-            for y in range(280, 520, 56):
-                ld.line([(S(80), S(y)), (S(514), S(y))], fill=(210, 200, 180), width=S(8))
-            paste_scaled(img, lay, 480, 960, sc, rot=-3)
-        st = pop(prog(l2, 2.6, 0.3))
-        if st > 0.02:
-            sticker(img, 520, 1110, "APPLICATION ACCEPTED", 54, C["pink"], fg=C["white"], scale=st, rot=-12)
-        sticker(img, 480, 330, "NEXT UP", 110, C["yellow"], scale=pop(prog(l2, 0.0, 0.35)), rot=2)
+    n = 1 + int(18 * ease_out(prog(lt, 0.4, 3.6)))
+    for i in range(19):
+        # plane i appears when the counter reaches it, growing in over 0.3 s
+        ti = 0.4 + 3.6 * (1 - (1 - i / 18) ** (1 / 3)) if i else 0.0
+        g = ease_out(prog(lt, ti, 0.3))
+        if g <= 0.02: continue
+        x = 140 + (i % 5) * 180; y = 760 + (i // 5) * 150
+        draw_eplane(img, x, y + 8 * math.sin(lt * 3 + i), 0.16 * g, t=t)
+    sticker(img, 480, 330, f"{n} TEST FLIGHTS", 92, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 1380 - 160, "NOBODY ABOARD", 70, C["yellow"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
     return img
 
+
+def _s7_b(t, l2):
+    lt = l2 + 5.0
+    img = RUNWAY.copy(); d = ImageDraw.Draw(img)
+    draw_clouds(d, t)
+    l2 = lt - 5.0
+    cp = ease_out(prog(l2, 0.1, 0.5)); sc = 0.88 + 0.12 * cp
+    if cp > 0.02:
+        lay = Image.new("RGBA", (S(620), S(760)), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
+        ld.rounded_rectangle([S(16), S(22), S(610), S(750)], radius=S(30), fill=C["ink"])
+        ld.rounded_rectangle([0, 0, S(594), S(728)], radius=S(30), fill=(255, 250, 235), outline=C["ink"], width=S(8))
+        text_center(ld, 297, 110, "SAFETY", 70); text_center(ld, 297, 190, "CERTIFICATE", 62)
+        for y in range(280, 520, 56):
+            ld.line([(S(80), S(y)), (S(514), S(y))], fill=(210, 200, 180), width=S(8))
+        paste_scaled(img, lay, 480, 960 + 80 * (1 - cp), sc, rot=-3, alpha=cp)
+    st = pop(prog(l2, 2.6, 0.3))
+    if st > 0.02:
+        sticker(img, 520, 1110, "APPLICATION ACCEPTED", 54, C["pink"], fg=C["white"], scale=st, rot=-12)
+    sticker(img, 480, 330, "NEXT UP", 110, C["yellow"], scale=pop(prog(l2, 0.0, 0.35)), rot=2)
+    return img
 
 def s8(t, lt):
     img = SKY.copy(); d = ImageDraw.Draw(img)
@@ -199,7 +227,8 @@ def s8(t, lt):
     ld.rounded_rectangle([0, 0, S(794), S(528)], radius=S(30), fill=C["white"], outline=C["ink"], width=S(8))
     for i, txt in enumerate(["BEHAVED NORMALLY", "RESULTS MET", "EXPECTATIONS"]):
         text_center(ld, 450, 120 + i * 140, txt, 60)
-    paste_scaled(img, lay, 480, 900, pop(prog(lt, 0.2, 0.4)), rot=-1)
+    cp = ease_out(prog(lt, 0.2, 0.5))
+    paste_scaled(img, lay, 480, 900 + 80 * (1 - cp), 0.88 + 0.12 * cp, rot=-1, alpha=cp)
     d = ImageDraw.Draw(img)
     for i, tt in enumerate([1.0, 2.6]):
         if lt > tt:

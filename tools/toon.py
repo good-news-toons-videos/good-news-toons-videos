@@ -80,6 +80,8 @@ def sticker(img, cx, cy, s, size, bg, fg=C["ink"], scale=1.0, rot=0, pad=(44, 26
     if rot: lay = lay.rotate(rot, resample=Image.BICUBIC, expand=True)
     if scale != 1.0:
         lay = lay.resize((max(1, int(lay.width * scale)), max(1, int(lay.height * scale))), Image.BICUBIC)
+    if scale < 0.6:  # fade in during the first part of the pop so it doesn't blink on
+        lay.putalpha(lay.getchannel("A").point(lambda v: int(v * scale / 0.6)))
     img.alpha_composite(lay, (int(S(cx) - lay.width / 2), int(S(cy) - lay.height / 2)))
 
 # ---------- captions ----------
@@ -110,14 +112,41 @@ def set_safe_captions():
     global CAPTION_Y, CAPTION_X, CAPTION_MAXW
     CAPTION_Y, CAPTION_X, CAPTION_MAXW = 1470, 510, 840
 
-def draw_caption(img, chunks, t, y=None):
-    if y is None: y = CAPTION_Y
+def caption_pick(chunks, t):
+    """current caption chunk; holds through short pauses so captions don't blink off between lines"""
     cur = None
-    for a, b, s in chunks:
-        if a <= t < b + 0.12: cur = (a, s)
+    for k, (a, b, s) in enumerate(chunks):
+        if a > t: break
+        nxt = chunks[k + 1][0] if k + 1 < len(chunks) else b + 1.2
+        if t < b + 0.12 or (nxt - b < 0.9 and t < nxt):
+            cur = (a, s)
+    return cur
+
+
+def draw_caption_1x(img, chunks, t):
+    """draw the caption straight onto a finished 1080x1920 RGB frame (after camera moves and crossfades)"""
+    cur = caption_pick(chunks, t)
     if not cur: return
     a, s = cur
-    sc = 0.85 + 0.15 * pop(prog(t, a, 0.18))
+    sc = 0.92 + 0.08 * pop(prog(t, a, 0.16))
+    d = ImageDraw.Draw(img)
+    size = 76 * sc
+    s = s.upper()
+    f = ImageFont.truetype(FONT_BLACK, int(size))
+    bb = d.textbbox((0, 0), s, font=f, stroke_width=9)
+    if bb[2] - bb[0] > CAPTION_MAXW:
+        f = ImageFont.truetype(FONT_BLACK, int(size * CAPTION_MAXW / (bb[2] - bb[0])))
+        bb = d.textbbox((0, 0), s, font=f, stroke_width=9)
+    w, h = bb[2] - bb[0], bb[3] - bb[1]
+    d.text((CAPTION_X - w / 2 - bb[0], CAPTION_Y - h / 2 - bb[1]), s, font=f, fill=C["white"], stroke_width=9, stroke_fill=C["ink"])
+
+
+def draw_caption(img, chunks, t, y=None):
+    if y is None: y = CAPTION_Y
+    cur = caption_pick(chunks, t)
+    if not cur: return
+    a, s = cur
+    sc = 0.92 + 0.08 * pop(prog(t, a, 0.16))
     d = ImageDraw.Draw(img)
     size = 76 * sc
     f = font(size)
@@ -390,11 +419,13 @@ def sunburst(d, cx, cy, t, col, n=16, speed=0.3, width=0.18):
         d.polygon([(S(cx), S(cy)), (S(cx + 1800 * math.cos(a0)), S(cy + 1800 * math.sin(a0))),
                    (S(cx + 1800 * math.cos(a0 + width)), S(cy + 1800 * math.sin(a0 + width)))], fill=col)
 
-def paste_scaled(img, lay, cx, cy, scale=1.0, rot=0):
-    if scale <= 0.01: return
+def paste_scaled(img, lay, cx, cy, scale=1.0, rot=0, alpha=1.0):
+    if scale <= 0.01 or alpha <= 0.01: return
     if rot: lay = lay.rotate(rot, resample=Image.BICUBIC, expand=True)
     if scale != 1.0:
         lay = lay.resize((max(1, int(lay.width * scale)), max(1, int(lay.height * scale))), Image.BICUBIC)
+    if alpha < 1.0:
+        lay.putalpha(lay.getchannel("A").point(lambda v: int(v * alpha)))
     img.alpha_composite(lay, (int(S(cx) - lay.width / 2), int(S(cy) - lay.height / 2)))
 
 # ---------- space ----------
@@ -496,7 +527,7 @@ def draw_clock(d, cx, cy, r, frac, face=C["white"]):
     for i in range(12):
         a = i / 12 * 2 * math.pi
         d.line([(S(cx + math.sin(a) * r * 0.8), S(cy - math.cos(a) * r * 0.8)), (S(cx + math.sin(a) * r * 0.92), S(cy - math.cos(a) * r * 0.92))], fill=ink, width=S(6))
-    ah = frac * 4 * math.pi; am = frac * 48 * math.pi
+    ah = frac * 2 * math.pi; am = frac * 8 * math.pi
     d.line([(S(cx), S(cy)), (S(cx + math.sin(ah) * r * 0.5), S(cy - math.cos(ah) * r * 0.5))], fill=ink, width=S(12))
     d.line([(S(cx), S(cy)), (S(cx + math.sin(am) * r * 0.75), S(cy - math.cos(am) * r * 0.75))], fill=C["pink"], width=S(8))
     d.ellipse([S(cx - 12), S(cy - 12), S(cx + 12), S(cy + 12)], fill=ink)
@@ -742,8 +773,9 @@ def draw_eplane(img, cx, cy, scale=1.0, rot=0, t=0.0, col=(250, 250, 255), strip
     for i in range(5):
         fx = -140 + i * 70
         d.rounded_rectangle([P(fx - 26, -108)[0], P(fx - 26, -108)[1], P(fx + 26, -60)[0], P(fx + 26, -60)[1]], radius=S(14), fill=(80, 90, 110), outline=ink, width=S(5))
-        sp = (t * 40 + i) % 1.0
-        d.line([P(fx + 18, -104 + 44 * sp), P(fx + 18, -64)], fill=stripe, width=S(5))
+        for b_ in range(3):
+            a_ = t * 5.0 + i * 0.7 + b_ * 2.094
+            d.line([P(fx, -84), P(fx + 20 * math.cos(a_), -84 + 20 * math.sin(a_))], fill=stripe, width=S(5))
     # bolt badge
     d.polygon([P(-40, 52), P(-12, 52), P(-26, 60), P(-6, 60), P(-46, 82), P(-32, 66), P(-50, 66)], fill=C["yellow"])
     # landing gear
@@ -1052,8 +1084,11 @@ def draw_bubbles(d, t, seed=4, n=18):
     rnd = random.Random(seed)
     for i in range(n):
         x0 = rnd.uniform(60, W - 60); sp = rnd.uniform(80, 170); r = rnd.uniform(6, 16)
-        y = 1400 - ((t * sp + rnd.uniform(0, 1400)) % 1500)
+        ph = ((t * sp + rnd.uniform(0, 1400)) % 1500) / 1500
+        y = 1400 - ph * 1500
         x = x0 + 14 * math.sin(t * 2 + i)
+        r = r * min(1.0, ph / 0.08, (1 - ph) / 0.08)
+        if r < 1: continue
         d.ellipse([S(x - r), S(y - r), S(x + r), S(y + r)], outline=(220, 245, 255), width=S(3))
 
 def draw_oyster(d, x, y, scale=1.0, open_=0.0, face=True, col=(170, 160, 150), blink=False):
@@ -1159,3 +1194,13 @@ def draw_globe_dot(d, cx, cy, r, dots=(), t=0.0):
     for (dx, dy) in dots:
         pr = 18 + 6 * math.sin(t * 6)
         d.ellipse([S(cx + dx * r - pr), S(cy + dy * r - pr), S(cx + dx * r + pr), S(cy + dy * r + pr)], fill=C["pink"], outline=C["ink"], width=S(4))
+
+
+def xcut(t, lt, cut, fa, fb, dur=0.3):
+    """switch from shot fa to shot fb at lt=cut with a short crossfade (no hard in-scene cuts)"""
+    if lt < cut:
+        return fa(t, lt)
+    if lt >= cut + dur:
+        return fb(t, lt - cut)
+    a = fa(t, lt); b = fb(t, lt - cut)
+    return Image.blend(a, b, ease_in_out((lt - cut) / dur))

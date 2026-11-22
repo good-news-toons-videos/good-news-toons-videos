@@ -101,19 +101,20 @@ def s4(t, lt):
     img = ICE.copy(); d = ImageDraw.Draw(img)
     frac = ease_out(prog(lt, 0.2, 3.2))
     hh = int(17 * frac); mm = int(31 * frac)
-    if lt < 3.8:
-        draw_stopwatch(d, 250, 900, 120, frac)
-        sticker(img, 640, 890, f"{hh}H {mm:02d}M", 90, C["white"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
-    else:
-        sticker(img, 480, 720, "17H 31M", 90, C["white"], scale=1.0, rot=-2)
-    # podium
-    pa = pop(prog(lt, 3.8, 0.4))
+    mv = ease_in_out(prog(lt, 3.5, 0.7))       # stopwatch hands off to the podium smoothly
+    if mv < 1:
+        sw = 1 - mv
+        draw_stopwatch(d, 250 - 120 * mv, 900 - 200 * mv, 120 * (0.4 + 0.6 * sw), frac)
+    sticker(img, 640 - 160 * mv, 890 - 170 * mv, f"{hh}H {mm:02d}M", 90, C["white"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
+    pa = ease_out(prog(lt, 3.9, 0.6))          # podium rises (no overshoot so the runner doesn't wobble)
     if pa > 0.02:
         for (x, h, lab, col) in [(300, 200, "2", (200, 210, 225)), (500, 280, "1", C["yellow"]), (700, 150, "3", (220, 160, 110))]:
             d.rectangle([S(x - 90), S(GROUND - h * pa), S(x + 90), S(GROUND)], fill=col, outline=C["ink"], width=S(6))
-            text_center(d, x, GROUND - h * pa + 50, lab, 70 * pa)
-        draw_person(d, 300, GROUND - 200 * pa, scale=1.0 * pa, body=JACKET, hat=HAT, arms_up=0.7)
-    sticker(img, 480, 330, "2ND OVERALL", 100, C["yellow"], scale=pop(prog(lt, 4.0, 0.35)), rot=2)
+            if pa > 0.4:
+                text_center(d, x, GROUND - h * pa + 50, lab, 70)
+        hop = 18 * abs(math.sin((lt - 4.5) * 4)) if lt > 4.5 else 0
+        draw_person(d, 300, GROUND - 200 * pa - hop, scale=1.0, body=JACKET, hat=HAT, arms_up=0.7 + 0.3 * math.sin(lt * 5))
+    sticker(img, 480, 330, "2ND OVERALL", 100, C["yellow"], scale=pop(prog(lt, 4.3, 0.35)), rot=2)
     sticker(img, 480, 520, "< 30 MIN BEHIND", 76, C["teal"], fg=C["white"], scale=pop(prog(lt, 5.4, 0.35)), rot=-2)
     return img
 
@@ -137,8 +138,10 @@ def s6(t, lt):
     for i in range(8):
         x = 140 + (i % 4) * 230; y = 980 + (i // 4) * 330
         fin = i in (0, 2, 5, 7)
-        lit = fin and lt > 1.5 + 0.4 * [0, 2, 5, 7].index(i) if fin else False
-        draw_person(d, x, y, scale=0.85, body=JACKET if lit else (170, 175, 190), hat=HAT if lit else (150, 155, 170), arms_up=0.8 if lit else 0.0)
+        g = ease_out(prog(lt, 1.5 + 0.4 * [0, 2, 5, 7].index(i), 0.4)) if fin else 0.0
+        mix = lambda c1, c2: tuple(int(c1[q] + (c2[q] - c1[q]) * g) for q in range(3))
+        hop = 14 * abs(math.sin(lt * 5 + i)) * g
+        draw_person(d, x, y - hop, scale=0.85, body=mix((170, 175, 190), JACKET), hat=mix((150, 155, 170), HAT), arms_up=0.8 * g)
     sticker(img, 480, 330, "4 OF 8", 140, C["yellow"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
     sticker(img, 480, 530, "FINISHED", 90, C["white"], scale=pop(prog(lt, 1.0, 0.35)), rot=2)
     return img

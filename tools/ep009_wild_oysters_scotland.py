@@ -39,7 +39,8 @@ def s0(t, lt):
     draw_bubbles(d, t)
     baby_bed(d, lt, n=5)
     for i in range(5):
-        draw_heart(d, 160 + i * 170, 1120 - (lt * 60 + i * 50) % 260, 22)
+        ph = ((lt * 60 + i * 50) % 260) / 260
+        draw_heart(d, 160 + i * 170, 1120 - ph * 260, 22 * math.sin(ph * math.pi))
     sticker(img, 480, 330, "BABY OYSTERS!", 110, C["yellow"], scale=pop(prog(lt, 0.1, 0.35)), rot=-3)
     sticker(img, 480, 530, "BACK IN SCOTLAND", 76, C["white"], scale=pop(prog(lt, 1.4, 0.35)), rot=2)
     sticker(img, 480, 700, "FIRST IN 100+ YEARS", 62, C["teal"], fg=C["white"], scale=pop(prog(lt, 2.8, 0.35)), rot=-1)
@@ -48,12 +49,15 @@ def s0(t, lt):
 
 def s1(t, lt):
     vanish = prog(lt, 3.2, 2.0)
-    img = SEPIA.copy() if vanish < 0.5 else SEA.copy(); d = ImageDraw.Draw(img)
+    img = Image.blend(SEPIA, SEA, ease_in_out(vanish)) if 0 < vanish < 1 else (SEPIA if vanish <= 0 else SEA).copy()
+    d = ImageDraw.Draw(img)
     rnd = random.Random(1)
     for i in range(16):
         x = 70 + (i % 8) * 125 + rnd.uniform(-20, 20); y = FLOOR - 30 + (i // 8) * 80
-        if rnd.random() > vanish:
-            draw_oyster(d, x, y, 0.9, face=False)
+        thr = rnd.random() * 0.85
+        g = clamp((thr - vanish) / 0.15 + 1) if vanish > 0 else 1.0   # each oyster shrinks away in turn
+        if g > 0.03:
+            draw_oyster(d, x, y, 0.9 * g, face=False)
     # little boat at the surface
     bx = -200 + 1400 * prog(lt, 2.4, 4.0)
     d.polygon([(S(bx - 120), S(170)), (S(bx + 120), S(170)), (S(bx + 90), S(230)), (S(bx - 90), S(230))], fill=(120, 80, 50), outline=C["ink"], width=S(6))
@@ -111,25 +115,33 @@ def s4(t, lt):
 
 
 def s5(t, lt):
+    return xcut(t, lt, 2.4, _s5_a, _s5_b)
+
+
+def _s5_a(t, lt):
     img = SEA.copy(); d = ImageDraw.Draw(img)
     sunburst(d, 480, 1100, lt, (90, 190, 230), speed=0.4)
-    if lt < 2.4:
-        draw_coin(d, 300, 1050, 150)
-        draw_oyster(d, 690, 1180, 1.6, open_=0.3)
-        sticker(img, 480, 380, "AS BIG AS A 50p", 90, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-    else:
-        l2 = lt - 2.4
-        # gag: oysters in party hats
-        for i, x in enumerate((240, 480, 720)):
-            y = FLOOR - 20 - 40 * abs(math.sin(l2 * 5 + i))
-            draw_oyster(d, x, y, 1.4, open_=0.4)
-            hx, hy = x, y - 150
-            d.polygon([(S(hx - 34), S(hy)), (S(hx + 34), S(hy)), (S(hx), S(hy - 100))], fill=[C["pink"], C["yellow"], C["teal"]][i], outline=C["ink"], width=S(5))
-            d.ellipse([S(hx - 14), S(hy - 114), S(hx + 14), S(hy - 86)], fill=C["white"], outline=C["ink"], width=S(4))
-        draw_confetti(d, l2, 0.0)
-        sticker(img, 480, 380, "SHELL-EBRATE!", 110, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-4)
+    draw_coin(d, 300, 1050, 150)
+    draw_oyster(d, 690, 1180, 1.6, open_=0.3)
+    sticker(img, 480, 380, "AS BIG AS A 50p", 90, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
     return img
 
+
+def _s5_b(t, l2):
+    lt = l2 + 2.4
+    img = SEA.copy(); d = ImageDraw.Draw(img)
+    sunburst(d, 480, 1100, lt, (90, 190, 230), speed=0.4)
+    l2 = lt - 2.4
+    # gag: oysters in party hats
+    for i, x in enumerate((240, 480, 720)):
+        y = FLOOR - 20 - 40 * abs(math.sin(l2 * 5 + i))
+        draw_oyster(d, x, y, 1.4, open_=0.4)
+        hx, hy = x, y - 150
+        d.polygon([(S(hx - 34), S(hy)), (S(hx + 34), S(hy)), (S(hx), S(hy - 100))], fill=[C["pink"], C["yellow"], C["teal"]][i], outline=C["ink"], width=S(5))
+        d.ellipse([S(hx - 14), S(hy - 114), S(hx + 14), S(hy - 86)], fill=C["white"], outline=C["ink"], width=S(4))
+    draw_confetti(d, l2, 0.0)
+    sticker(img, 480, 380, "SHELL-EBRATE!", 110, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-4)
+    return img
 
 def s6(t, lt):
     img = SEA.copy(); d = ImageDraw.Draw(img)
@@ -160,7 +172,9 @@ def s7(t, lt):
         x0 = rnd.choice((220, 480, 740)) + rnd.uniform(-40, 40)
         p = ((lt * 0.25 + rnd.random()) % 1)
         y = FLOOR - 100 - p * 600; x = x0 + 60 * math.sin(p * 6 + i)
-        d.ellipse([S(x - 7), S(y - 7), S(x + 7), S(y + 7)], fill=(255, 240, 200))
+        r = 7 * min(1.0, p / 0.1, (1 - p) / 0.25)
+        if r > 0.8:
+            d.ellipse([S(x - r), S(y - r), S(x + r), S(y + r)], fill=(255, 240, 200))
     sticker(img, 480, 380, "NOW REPRODUCING", 86, C["yellow"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
     sticker(img, 480, 570, "MORE ON THE WAY", 74, C["white"], scale=pop(prog(lt, 2.6, 0.35)), rot=2)
     return img

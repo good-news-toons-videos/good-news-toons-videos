@@ -20,15 +20,25 @@ STARTS = [0, 3.9459, 13.2469, 20.0663, 28.8971, 34.1231, 41.5955, 48.3365, 54.92
 DURS = [3.3959, 8.751, 6.2694, 8.2808, 4.6759, 6.9224, 6.191, 6.0343, 7.3927, 2.5861]
 TOTAL = 66.05
 
-LAKES = [make_lake_bg(level=k / 10) for k in range(11)]
+LAKE0 = make_lake_bg(level=0.0)
 FOREST = vgrad(SW, SH, (150, 210, 255), (230, 246, 255)).convert("RGBA")
 _d = ImageDraw.Draw(FOREST)
 wavy_band(_d, 1250, 20, 500, 0.4, (110, 180, 100))
 LAB = vgrad(SW, SH, (240, 236, 220), (220, 214, 196)).convert("RGBA")
 
 
-def lake(level):
-    return LAKES[int(round(clamp(level) * 10))].copy()
+def lake(level, t=0.0):
+    """lake backdrop with a smoothly moving water line and drifting ripples"""
+    img = LAKE0.copy(); d = ImageDraw.Draw(img)
+    wl = 1180 - 60 * clamp(level)
+    d.rectangle([0, S(wl), SW, SH], fill=(50, 130, 210))
+    d.rectangle([0, S(wl), SW, S(wl + 18)], fill=(130, 200, 250))
+    rnd = random.Random(12)
+    for i in range(14):
+        y = wl + 60 + rnd.uniform(0, 520); w = rnd.uniform(50, 120); sp = rnd.uniform(15, 35)
+        x = (rnd.uniform(0, W + 200) + t * sp) % (W + 200) - 100
+        d.rounded_rectangle([S(x - w / 2), S(y - 4), S(x + w / 2), S(y + 4)], radius=S(4), fill=(110, 180, 240))
+    return img
 
 
 def splash(d, t, x, y, n=6):
@@ -51,7 +61,7 @@ def mascot(d, x, y, s, t):
 
 
 def s0(t, lt):
-    img = lake(prog(lt, 0.3, 2.8)); d = ImageDraw.Draw(img)
+    img = lake(ease_out(prog(lt, 0.3, 2.8)), t); d = ImageDraw.Draw(img)
     draw_clouds(d, t)
     splash(d, lt, 480, 1240)
     mascot(d, 480, 1050, 110 * pop(prog(lt, 0.4, 0.4)) + 1, t)
@@ -61,28 +71,36 @@ def s0(t, lt):
 
 
 def s1(t, lt):
-    img = lake(0.6); d = ImageDraw.Draw(img)
+    return xcut(t, lt, 3.6, _s1_a, _s1_b)
+
+
+def _s1_a(t, lt):
+    img = lake(0.6, t); d = ImageDraw.Draw(img)
     draw_clouds(d, t)
-    if lt < 3.6:
-        mascot(d, 480, 1060, 90, t)
-        sticker(img, 480, 330, "LAKE BAIKAL, SIBERIA", 74, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 530, "~25 MILLION YEARS OLD", 66, C["yellow"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
-    else:
-        l2 = lt - 3.6
-        cx, cy, r = 480, 820, 190
-        d.ellipse([S(cx - r + 10), S(cy - r + 14), S(cx + r + 10), S(cy + r + 14)], fill=C["ink"])
-        d.ellipse([S(cx - r), S(cy - r), S(cx + r), S(cy + r)], fill=(200, 230, 255), outline=C["ink"], width=S(7))
-        ang = 72 * ease_out(prog(l2, 0.2, 1.2))
-        if ang > 1:
-            d.pieslice([S(cx - r), S(cy - r), S(cx + r), S(cy + r)], -90, -90 + ang, fill=(50, 130, 210), outline=C["ink"], width=S(7))
-        sticker(img, 480, 330, "ABOUT 1/5", 120, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 1100, "OF EARTH'S UNFROZEN FRESH WATER", 44, C["white"], scale=pop(prog(l2, 0.8, 0.35)), rot=1)
+    mascot(d, 480, 1060, 90, t)
+    sticker(img, 480, 330, "LAKE BAIKAL, SIBERIA", 74, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 530, "~25 MILLION YEARS OLD", 66, C["yellow"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
     return img
 
 
+def _s1_b(t, l2):
+    lt = l2 + 3.6
+    img = lake(0.6, t); d = ImageDraw.Draw(img)
+    draw_clouds(d, t)
+    l2 = lt - 3.6
+    cx, cy, r = 480, 820, 190
+    d.ellipse([S(cx - r + 10), S(cy - r + 14), S(cx + r + 10), S(cy + r + 14)], fill=C["ink"])
+    d.ellipse([S(cx - r), S(cy - r), S(cx + r), S(cy + r)], fill=(200, 230, 255), outline=C["ink"], width=S(7))
+    ang = 72 * ease_out(prog(l2, 0.2, 1.2))
+    if ang > 1:
+        d.pieslice([S(cx - r), S(cy - r), S(cx + r), S(cy + r)], -90, -90 + ang, fill=(50, 130, 210), outline=C["ink"], width=S(7))
+    sticker(img, 480, 330, "ABOUT 1/5", 120, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 1100, "OF EARTH'S UNFROZEN FRESH WATER", 44, C["white"], scale=pop(prog(l2, 0.8, 0.35)), rot=1)
+    return img
+
 def s2(t, lt):
     p = ease_in_out(prog(lt, 0.3, 4.5))
-    img = lake(0.6 - 0.6 * p); d = ImageDraw.Draw(img)
+    img = lake(0.6 - 0.6 * p, t); d = ImageDraw.Draw(img)
     w = 60 - 44 * p
     draw_river(d, [(100, 1060), (180, 1100), (260, 1140), (330, 1180)], w=w)
     draw_river(d, [(640, 1180), (720, 1130), (820, 1090), (960, 1060)], w=w)
@@ -93,28 +111,34 @@ def s2(t, lt):
 
 
 def s3(t, lt):
-    if lt < 4.0:
-        img = FOREST.copy(); d = ImageDraw.Draw(img)
-        for x, h in [(120, 420), (330, 520), (880, 480)]:
-            draw_pine(d, x, 1290, h)
-        draw_pine(d, 640, 1300, 600)
-        draw_person(d, 470, 1300, scale=1.5, body=(80, 160, 255), hat=(255, 140, 50), facing=1)
-        # corer
-        push = 30 * abs(math.sin(lt * 3))
-        d.line([(S(560), S(1080)), (S(625 - push * 0.3), S(1080))], fill=(160, 160, 170), width=S(14))
-        d.line([(S(560), S(1050)), (S(560), S(1110))], fill=C["ink"], width=S(12))
-        sticker(img, 480, 330, "TINY TREE CORES", 92, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-    else:
-        l2 = lt - 4.0
-        img = LAB.copy(); d = ImageDraw.Draw(img)
-        hl = None
-        if l2 > 1.5:
-            hl = {1, 4, 7} if int(l2 * 2) % 2 == 0 else {2, 5, 9}
-        draw_tree_rings(d, 480, 1000, 330, n=14, highlight=hl)
-        sticker(img, 480, 330, "GROWTH RINGS =", 92, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 520, "WET & DRY YEARS", 80, C["teal"], fg=C["white"], scale=pop(prog(l2, 1.4, 0.35)), rot=2)
+    return xcut(t, lt, 4.0, _s3_a, _s3_b)
+
+
+def _s3_a(t, lt):
+    img = FOREST.copy(); d = ImageDraw.Draw(img)
+    for x, h in [(120, 420), (330, 520), (880, 480)]:
+        draw_pine(d, x, 1290, h)
+    draw_pine(d, 640, 1300, 600)
+    draw_person(d, 470, 1300, scale=1.5, body=(80, 160, 255), hat=(255, 140, 50), facing=1)
+    # corer
+    push = 30 * abs(math.sin(lt * 3))
+    d.line([(S(560), S(1080)), (S(625 - push * 0.3), S(1080))], fill=(160, 160, 170), width=S(14))
+    d.line([(S(560), S(1050)), (S(560), S(1110))], fill=C["ink"], width=S(12))
+    sticker(img, 480, 330, "TINY TREE CORES", 92, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
     return img
 
+
+def _s3_b(t, l2):
+    lt = l2 + 4.0
+    l2 = lt - 4.0
+    img = LAB.copy(); d = ImageDraw.Draw(img)
+    hl = None
+    if l2 > 1.5:
+        hl = {1, 4, 7} if int(l2 * 2) % 2 == 0 else {2, 5, 9}
+    draw_tree_rings(d, 480, 1000, 330, n=14, highlight=hl)
+    sticker(img, 480, 330, "GROWTH RINGS =", 92, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 520, "WET & DRY YEARS", 80, C["teal"], fg=C["white"], scale=pop(prog(l2, 1.4, 0.35)), rot=2)
+    return img
 
 def s4(t, lt):
     img = LAB.copy(); d = ImageDraw.Draw(img)
@@ -135,9 +159,16 @@ def s5(t, lt):
     vals[22:27] = [0.35, 0.3, 0.28, 0.25, 0.27]
     vals[27:] = [0.6, 0.85, 1.0]
     p = ease_in_out(prog(lt, 0.3, 4.0))
-    m = max(2, int(len(vals) * p))
-    pts = [(S(x0 + (x1 - x0) * i / (len(vals) - 1)), S(base - (base - top) * v)) for i, v in enumerate(vals[:m])]
-    d.line(pts, fill=(50, 130, 210), width=S(12), joint="curve")
+    pos = (len(vals) - 1) * p                     # draw up to a fractional point so the line grows smoothly
+    m = int(pos); fr = pos - m
+    P_ = lambda i, v: (S(x0 + (x1 - x0) * i / (len(vals) - 1)), S(base - (base - top) * v))
+    pts = [P_(i, v) for i, v in enumerate(vals[:m + 1])]
+    if m + 1 < len(vals):
+        pts.append(P_(m + fr, vals[m] + (vals[m + 1] - vals[m]) * fr))
+    if len(pts) > 1:
+        d.line(pts, fill=(50, 130, 210), width=S(12), joint="curve")
+        hx, hy = pts[-1]
+        d.ellipse([hx - S(14), hy - S(14), hx + S(14), hy + S(14)], fill=(50, 130, 210), outline=C["ink"], width=S(4))
     xs = x0 + (x1 - x0) * 27 / 29
     if p > 0.9:
         d.line([(S(xs), S(top - 40)), (S(xs), S(base))], fill=C["pink"], width=S(6))
@@ -150,22 +181,22 @@ def s5(t, lt):
 
 def s6(t, lt):
     img = LAB.copy(); d = ImageDraw.Draw(img)
-    sc = pop(prog(lt, 0.2, 0.4))
-    if sc > 0.02:
+    cp = ease_out(prog(lt, 0.2, 0.6)); sc = 0.88 + 0.12 * cp
+    if cp > 0.02:
         lay = Image.new("RGBA", (S(600), S(760)), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
         ld.rounded_rectangle([S(16), S(22), S(596), S(756)], radius=S(24), fill=C["ink"])
         ld.rounded_rectangle([0, 0, S(580), S(734)], radius=S(24), fill=C["white"], outline=C["ink"], width=S(8))
         text_center(ld, 290, 90, "GEOPHYSICAL", 54); text_center(ld, 290, 150, "RESEARCH LETTERS", 46)
         for y in range(230, 700, 50):
             ld.line([(S(60), S(y)), (S(520 if y % 100 else 380), S(y))], fill=(200, 200, 210), width=S(8))
-        paste_scaled(img, lay, 480, 960, sc, rot=-3)
+        paste_scaled(img, lay, 480, 960 + 90 * (1 - cp) + 10 * math.sin(lt * 1.8), sc, rot=-3 + 1.2 * math.sin(lt * 1.3), alpha=cp)
     sticker(img, 480, 330, "THE STUDY", 110, C["yellow"], scale=pop(prog(lt, 0.0, 0.35)), rot=-2)
     sticker(img, 480, 1300 - 40, "LED BY YUNNAN UNIVERSITY", 50, C["teal"], fg=C["white"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
     return img
 
 
 def s7(t, lt):
-    img = lake(0.7); d = ImageDraw.Draw(img)
+    img = lake(0.7, t); d = ImageDraw.Draw(img)
     # moist air rolling in
     for i in range(3):
         x = -300 + ((lt * 120 + i * 420) % (W + 600))
@@ -181,7 +212,7 @@ def s7(t, lt):
 
 
 def s8(t, lt):
-    img = lake(0.8); d = ImageDraw.Draw(img)
+    img = lake(0.8, t); d = ImageDraw.Draw(img)
     # farm field rows on the left shore, dam on the right
     for i in range(5):
         y = 1080 + i * 22
@@ -205,7 +236,7 @@ def s8(t, lt):
 
 
 def s9(t, lt):
-    img = lake(1.0); d = ImageDraw.Draw(img)  # mirrors the hook for the loop
+    img = lake(1.0, t); d = ImageDraw.Draw(img)  # mirrors the hook for the loop
     draw_clouds(d, t)
     splash(d, lt, 480, 1240)
     mascot(d, 480, 1050, 110, t)

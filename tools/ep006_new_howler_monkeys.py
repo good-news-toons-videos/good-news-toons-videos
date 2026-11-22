@@ -1,6 +1,6 @@
 """Episode 006: Two new howler monkey species identified in Brazil's Amazon; one already uses rope bridges over roads."""
 import math, random
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from toon import *
 from epkit import run, REPO
 
@@ -124,14 +124,18 @@ def s5(t, lt):
     img = JUNGLE2.copy(); d = ImageDraw.Draw(img)
     road_scene(d, t)
     draw_rope_bridge(d, 40, 1040, 820, t)
-    p = (lt * 0.13) % 1.0
+    p = ease_in_out(prog(lt, 0.3, 9.4))
     x = 60 + 920 * p; y = 820 + 40 * math.sin(p * math.pi)
     draw_monkey(d, x, y - 6, scale=1.1, phase=lt * 8, fur=RED)
     draw_camtrap(d, 920, 1060, lt, 0.9)
     for ft in (2.2, 5.6):
         fl = lt - ft
-        if 0 <= fl < 0.3:
-            img.alpha_composite(Image.new("RGBA", img.size, (255, 255, 255, int(200 * (1 - fl / 0.3)))))
+        if 0 <= fl < 0.35:
+            k = 1 - fl / 0.35
+            glow = Image.new("RGBA", img.size, (0, 0, 0, 0)); gd = ImageDraw.Draw(glow)
+            r = 90 + 160 * (fl / 0.35)
+            gd.ellipse([S(920 - r), S(1060 - r), S(920 + r), S(1060 + r)], fill=(255, 255, 230, int(170 * k)))
+            img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(S(30))))
     sticker(img, 480, 330, "CAUGHT ON CAMERA!", 86, C["yellow"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
     sticker(img, 480, 520, "ROPE BRIDGE", 90, C["white"], scale=pop(prog(lt, 3.0, 0.35)), rot=2)
     sticker(img, 480, 1360 - 30, "ALTA FLORESTA, BRAZIL", 52, C["teal"], fg=C["white"], scale=pop(prog(lt, 6.8, 0.35)), rot=-1)
@@ -140,6 +144,7 @@ def s5(t, lt):
 
 def polaroid(img, cx, cy, kind, sc, rot, t):
     if sc <= 0.02: return
+    k = sc; sc = 0.85 + 0.15 * k; cy = cy + 120 * (1 - k)
     lay = Image.new("RGBA", (S(330), S(380)), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
     ld.rectangle([S(10), S(14), S(326), S(376)], fill=C["ink"])
     ld.rectangle([0, 0, S(316), S(366)], fill=C["white"], outline=C["ink"], width=S(5))
@@ -148,14 +153,14 @@ def polaroid(img, cx, cy, kind, sc, rot, t):
     col, sz, lab = {"capuchin": ((120, 80, 50), 0.9, "CAPUCHIN"), "marmoset": ((150, 140, 120), 0.6, "MARMOSET"), "titi": ((140, 110, 90), 0.8, "TITI")}[kind]
     draw_monkey(ld, 130, 200, scale=sz, phase=t * 3, fur=col, beard=False)
     text_center(ld, 158, 322, lab, 34)
-    paste_scaled(img, lay, cx, cy, sc, rot)
+    paste_scaled(img, lay, cx, cy, sc, rot + 8 * (1 - k), alpha=k)
 
 
 def s6(t, lt):
     img = vgrad(SW, SH, (60, 60, 90), (40, 40, 60)).convert("RGBA"); d = ImageDraw.Draw(img)
-    polaroid(img, 280, 840, "capuchin", pop(prog(lt, 0.3, 0.4)), 6, t)
-    polaroid(img, 690, 900, "marmoset", pop(prog(lt, 1.6, 0.4)), -5, t)
-    polaroid(img, 470, 1180, "titi", pop(prog(lt, 2.8, 0.4)), 3, t)
+    polaroid(img, 280, 840, "capuchin", ease_out(prog(lt, 0.3, 0.5)), 6, t)
+    polaroid(img, 690, 900, "marmoset", ease_out(prog(lt, 1.6, 0.5)), -5, t)
+    polaroid(img, 470, 1180, "titi", ease_out(prog(lt, 2.8, 0.5)), 3, t)
     sticker(img, 480, 330, "THOUSANDS OF PHOTOS", 74, C["yellow"], scale=pop(prog(lt, 0.0, 0.35)), rot=-2)
     return img
 

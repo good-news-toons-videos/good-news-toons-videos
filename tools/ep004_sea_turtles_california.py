@@ -29,17 +29,23 @@ GROUND = 1330
 
 
 def crawlers(d, t, n=6, y0=1300, seed=3, to_sea=True, spd=60):
+    """hatchlings scramble up the beach from below the frame and disappear into the surf (no teleporting)"""
     rnd = random.Random(seed)
+    top, bot = 1185, 1960
     for i in range(n):
-        x = rnd.uniform(140, 900); yy = y0 + rnd.uniform(-60, 120)
-        prog_ = (t * spd * rnd.uniform(0.7, 1.2) + rnd.uniform(0, 200)) % 260
-        draw_turtle(d, x + 12 * math.sin(t * 4 + i), yy - prog_ * 0.6, scale=1.05, phase=t * 9 + i, ang=-math.pi / 2 + 0.15 * math.sin(t * 4 + i))
+        x = rnd.uniform(140, 900); k = rnd.uniform(0.75, 1.2); off = rnd.uniform(0, bot - top)
+        y = bot - ((t * spd * 1.6 * k + off) % (bot - top))
+        sc = 1.05 * clamp((y - top) / 90)
+        if sc < 0.05: continue
+        wig = 0.15 * math.sin(t * 4 + i)
+        draw_turtle(d, x + 12 * math.sin(t * 4 + i) - (bot - y) * 0.08, y, scale=sc, phase=t * 9 + i, ang=-math.pi / 2 + wig)
 
 
 def s0(t, lt):
     img = DAY.copy(); d = ImageDraw.Draw(img)
-    draw_clouds(d, t); draw_surf(d, t)
+    draw_clouds(d, t)
     crawlers(d, t, n=6)
+    draw_surf(d, t)
     sticker(img, 500, 330, "BABY SEA TURTLES!", 92, C["yellow"], scale=pop(prog(lt, 0.1, 0.35)), rot=-3)
     sticker(img, 500, 540, "CALIFORNIA FIRST", 84, C["teal"], fg=C["white"], scale=pop(prog(lt, 1.6, 0.35)), rot=2)
     return img
@@ -71,8 +77,8 @@ def s2(t, lt):
     draw_surf(d, t)
     draw_turtle(d, 500, 1230, scale=2.8, phase=lt * 3, adult=True)
     # record book
-    b = pop(prog(lt, 1.2, 0.4))
-    if b > 0.02:
+    bp = ease_out(prog(lt, 1.2, 0.5)); b = 0.85 + 0.15 * bp if bp > 0 else 0
+    if bp > 0.02:
         lay = Image.new("RGBA", (S(520), S(360)), (0, 0, 0, 0)); ld = ImageDraw.Draw(lay)
         ld.rounded_rectangle([S(14), S(20), S(510), S(350)], radius=S(24), fill=C["ink"])
         ld.rounded_rectangle([0, 0, S(496), S(330)], radius=S(24), fill=C["white"], outline=C["ink"], width=S(7))
@@ -80,7 +86,7 @@ def s2(t, lt):
         for y in range(70, 300, 50):
             ld.line([(S(30), S(y)), (S(220), S(y))], fill=(200, 200, 210), width=S(5))
         text_center(ld, 372, 165, "0", 170, fill=C["pink"])
-        paste_scaled(img, lay, 500, 820, b, rot=-4)
+        paste_scaled(img, lay, 500, 820 + 60 * (1 - bp), b, rot=-4, alpha=bp)
     sticker(img, 500, 330, "NEVER RECORDED", 92, C["pink"], fg=C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
     sticker(img, 500, 520, "IN CALIFORNIA!", 84, C["yellow"], scale=pop(prog(lt, 0.7, 0.35)), rot=2)
     return img
@@ -145,7 +151,7 @@ def s5(t, lt):
         p = prog(lt, delay, 0.6)
         if p <= 0: continue
         y = 1010 - 260 * math.sin(min(1, p) * math.pi * 0.5) * (1 - 0.5 * prog(lt, delay + 0.6, 2)) + 30 * math.sin(lt * 4 + i)
-        draw_turtle(d, x + 40 * math.sin(lt * 2 + i), y, scale=0.85, ang=-math.pi / 2, phase=lt * 10 + i)
+        draw_turtle(d, x + 40 * math.sin(lt * 2 + i), y, scale=0.85 * min(1.0, p * 2.5), ang=-math.pi / 2, phase=lt * 10 + i)
     draw_bin(d, 470, 1120, 620, 300)
     draw_confetti(d, lt, 0.2)
     sticker(img, 470, 330, "ERUPTION!", 120, C["pink"], fg=C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-3)
@@ -157,8 +163,8 @@ def s5(t, lt):
 
 def s6(t, lt):
     img = DAWN.copy(); d = ImageDraw.Draw(img)
-    draw_surf(d, t)
     crawlers(d, t, n=9, y0=1340, seed=11, spd=90)
+    draw_surf(d, t)
     sticker(img, 500, 330, "BEFORE SUNRISE", 92, C["yellow"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
     sticker(img, 500, 520, "BACK HOME!", 96, C["white"], scale=pop(prog(lt, 2.6, 0.35)), rot=2)
     return img
@@ -183,7 +189,7 @@ def s8(t, lt):
     img.alpha_composite(warm); d = ImageDraw.Draw(img)
     draw_bubbles(d, t, seed=9)
     for i in range(2):
-        y = 1250 - (lt * 70 + i * 260) % 700
+        y = 1750 - lt * 150 - i * 300
         draw_turtle(d, 380 + i * 260, y, scale=1.8, phase=lt * 5 + i, adult=True, ang=-math.pi / 2)
     draw_thermometer(d, 860, 930, 320, 0.45 + 0.4 * ease_out(prog(lt, 0.5, 2.0)))
     ax = 160
@@ -196,8 +202,9 @@ def s8(t, lt):
 
 def s9(t, lt):
     img = DAY.copy(); d = ImageDraw.Draw(img)  # same look as the hook so the loop is seamless; d = ImageDraw.Draw(img)
-    draw_clouds(d, t); draw_surf(d, t)
+    draw_clouds(d, t)
     crawlers(d, t, n=6)
+    draw_surf(d, t)
     sticker(img, 500, 330, "FOLLOW", 130, C["yellow"], scale=pop(prog(lt, 0.0, 0.35)), rot=-3)
     sticker(img, 500, 520, "FOR DAILY GOOD NEWS", 66, C["white"], scale=pop(prog(lt, 0.4, 0.35)))
     return img

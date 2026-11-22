@@ -14,14 +14,40 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _CTX = {}
 
 
+XFADE = 0.3      # seconds of crossfade into each scene
+PUSH = 0.035     # slow camera push-in per scene (3.5%), anchored on the caption line
+
+
+def _bounds(i):
+    c = _CTX
+    a = c["starts"][i]
+    b = c["starts"][i + 1] if i + 1 < len(c["starts"]) else c["total"]
+    return a, b
+
+
+def _shot(i, t):
+    """render scene i at time t (2x canvas), then apply the camera push and downsample to 1x (captions are added later)"""
+    c = _CTX
+    a, b = _bounds(i)
+    img = c["scenes"][i](t, t - a)
+    z = 1 + PUSH * ease_in_out((t - a) / max(0.01, b - a))
+    ax, ay = S(CAPTION_X), S(CAPTION_Y)
+    box = (ax - ax / z, ay - ay / z, ax + (SW - ax) / z, ay + (SH - ay) / z)
+    return img.convert("RGB").resize((W, H), Image.LANCZOS, box=box)
+
+
 def _frame(t):
     c = _CTX
     i = 0
     while i + 1 < len(c["starts"]) and t >= c["starts"][i + 1]:
         i += 1
-    img = c["scenes"][i](t, t - c["starts"][i])
-    draw_caption(img, c["chunks"], t)
-    return finish(img)
+    cur = _shot(i, t)
+    lt = t - c["starts"][i]
+    if i > 0 and lt < XFADE:
+        prev = _shot(i - 1, t)
+        cur = Image.blend(prev, cur, ease_in_out(lt / XFADE))
+    draw_caption_1x(cur, c["chunks"], t)
+    return cur
 
 
 def _render_scene(i):

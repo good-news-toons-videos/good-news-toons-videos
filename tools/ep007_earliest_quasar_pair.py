@@ -101,29 +101,37 @@ def s3(t, lt):
 
 
 def s4(t, lt):
+    return xcut(t, lt, 4.0, _s4_a, _s4_b)
+
+
+def _s4_a(t, lt):
     img = SPACE2.copy(); d = ImageDraw.Draw(img)
     draw_twinkles(d, t, seed=8)
-    if lt < 4.0:
-        draw_quasar(img, 200, 1000, 90, t); draw_quasar(img, 780, 1000, 65, t + 1, col=(255, 170, 120), jet=(200, 160, 255))
-        d = ImageDraw.Draw(img)
-        p = ease_in_out(prog(lt, 0.4, 1.6))
-        d.line([(S(300), S(1180)), (S(300 + 380 * p), S(1180))], fill=C["yellow"], width=S(12))
-        for k in range(int(380 * p / 38)):
-            d.line([(S(310 + k * 38), S(1166)), (S(310 + k * 38), S(1194))], fill=C["ink"], width=S(4))
-        sticker(img, 480, 380, "~18,000", 130, C["yellow"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
-        sticker(img, 480, 580, "LIGHT-YEARS APART", 70, C["white"], scale=pop(prog(lt, 1.0, 0.35)), rot=2)
-    else:
-        l2 = lt - 4.0
-        draw_quasar(img, 280, 1050, 130, t)
-        d = ImageDraw.Draw(img)
-        n = int(20 * ease_out(prog(l2, 0.4, 2.0)))
-        for i in range(n):
-            x = 560 + (i % 5) * 80; y = 880 + (i // 5) * 80
-            d.ellipse([S(x - 26), S(y - 26), S(x + 26), S(y + 26)], fill=C["sun"], outline=C["ink"], width=S(4))
-        sticker(img, 480, 380, "1.5 BILLION", 120, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 580, "TIMES OUR SUN!", 80, C["pink"], fg=C["white"], scale=pop(prog(l2, 0.9, 0.35)), rot=2)
+    draw_quasar(img, 200, 1000, 90, t); draw_quasar(img, 780, 1000, 65, t + 1, col=(255, 170, 120), jet=(200, 160, 255))
+    d = ImageDraw.Draw(img)
+    p = ease_in_out(prog(lt, 0.4, 1.6))
+    d.line([(S(300), S(1180)), (S(300 + 380 * p), S(1180))], fill=C["yellow"], width=S(12))
+    for k in range(int(380 * p / 38)):
+        d.line([(S(310 + k * 38), S(1166)), (S(310 + k * 38), S(1194))], fill=C["ink"], width=S(4))
+    sticker(img, 480, 380, "~18,000", 130, C["yellow"], scale=pop(prog(lt, 0.2, 0.35)), rot=-2)
+    sticker(img, 480, 580, "LIGHT-YEARS APART", 70, C["white"], scale=pop(prog(lt, 1.0, 0.35)), rot=2)
     return img
 
+
+def _s4_b(t, l2):
+    lt = l2 + 4.0
+    img = SPACE2.copy(); d = ImageDraw.Draw(img)
+    draw_twinkles(d, t, seed=8)
+    l2 = lt - 4.0
+    draw_quasar(img, 280, 1050, 130, t)
+    d = ImageDraw.Draw(img)
+    n = int(20 * ease_out(prog(l2, 0.4, 2.0)))
+    for i in range(n):
+        x = 560 + (i % 5) * 80; y = 880 + (i // 5) * 80
+        d.ellipse([S(x - 26), S(y - 26), S(x + 26), S(y + 26)], fill=C["sun"], outline=C["ink"], width=S(4))
+    sticker(img, 480, 380, "1.5 BILLION", 120, C["yellow"], scale=pop(prog(l2, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 580, "TIMES OUR SUN!", 80, C["pink"], fg=C["white"], scale=pop(prog(l2, 0.9, 0.35)), rot=2)
+    return img
 
 def s5(t, lt):
     img = MK.copy(); d = ImageDraw.Draw(img)
@@ -154,20 +162,30 @@ def s6(t, lt):
 
 
 def s7(t, lt):
+    return xcut(t, lt, 4.0, _s7_a, _s7_b)
+
+
+def _s7_a(t, lt):
     img = SPACE2.copy(); d = ImageDraw.Draw(img)
     draw_twinkles(d, t, seed=5)
     pair(img, t, cy=1020, sep=220, r=80)
     d = ImageDraw.Draw(img)
-    if lt < 4.0:
-        draw_magnifier(d, 480 + 200 * math.sin(lt * 1.5), 1000, 150, rot=0.2 * math.sin(lt))
-        sticker(img, 480, 330, "TRICK OF THE LIGHT?", 76, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
-        sticker(img, 480, 520, "STILL CHECKING", 76, C["yellow"], scale=pop(prog(lt, 1.2, 0.35)), rot=2)
-    else:
-        l2 = lt - 4.0
-        sticker(img, 480, 330, "IF IT'S REAL...", 90, C["yellow"], scale=pop(prog(l2, 0.0, 0.35)), rot=-2)
-        sticker(img, 480, 520, "A COSMIC LAB!", 100, C["teal"], fg=C["white"], scale=pop(prog(l2, 0.8, 0.35)), rot=2)
+    draw_magnifier(d, 480 + 200 * math.sin(lt * 1.5), 1000, 150, rot=0.2 * math.sin(lt))
+    sticker(img, 480, 330, "TRICK OF THE LIGHT?", 76, C["white"], scale=pop(prog(lt, 0.1, 0.35)), rot=-2)
+    sticker(img, 480, 520, "STILL CHECKING", 76, C["yellow"], scale=pop(prog(lt, 1.2, 0.35)), rot=2)
     return img
 
+
+def _s7_b(t, l2):
+    lt = l2 + 4.0
+    img = SPACE2.copy(); d = ImageDraw.Draw(img)
+    draw_twinkles(d, t, seed=5)
+    pair(img, t, cy=1020, sep=220, r=80)
+    d = ImageDraw.Draw(img)
+    l2 = lt - 4.0
+    sticker(img, 480, 330, "IF IT'S REAL...", 90, C["yellow"], scale=pop(prog(l2, 0.0, 0.35)), rot=-2)
+    sticker(img, 480, 520, "A COSMIC LAB!", 100, C["teal"], fg=C["white"], scale=pop(prog(l2, 0.8, 0.35)), rot=2)
+    return img
 
 def s8(t, lt):
     img = SPACE.copy(); d = ImageDraw.Draw(img)  # mirrors the hook for the loop
