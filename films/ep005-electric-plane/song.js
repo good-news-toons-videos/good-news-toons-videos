@@ -87,7 +87,8 @@ MIX.sidechain([pad, bass], kicks, { depth: 0.25 });
 const wet = { verb: reverb(verb, { room: 0.8, damp: 0.35 }), dly: pingpong(dly, BEAT * 0.75, 0.35, 3500) };
 MIX.duck([drums, bass, pad, keys, wet.verb, wet.dly], voice, { depth: 0.55, release: 0.35 }); // music dips under the voice
 MIX.duck([gim, fx], voice, { depth: 0.25, release: 0.3 });
-const stems = { voice, drums, bass, pad, keys, gim, fx, ...wet };
+// Owner request (Nov 21 2026): voice only, no music or sound effects. MUSIC=1 node song.js brings the bed back.
+const stems = process.env.MUSIC === '1' ? { voice, drums, bass, pad, keys, gim, fx, ...wet } : { voice };
 const GAIN = { voice: 2.6, drums: 0.24, bass: 0.4, pad: 1.8, keys: 0.8, gim: 0.6, fx: 0.75, verb: 0.8, dly: 0.8 };
 const out = path.join(__dirname, 'out');
 const mix = MIX.mixdown(stems, GAIN, { stemDir: process.env.STEMS ? out : null });

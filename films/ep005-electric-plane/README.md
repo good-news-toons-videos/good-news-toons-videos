@@ -3,7 +3,7 @@
 Rebuilt with the **animation-studio** skill (canvas film + synthesized score from one timeline) instead of `tools/toon.py`.
 
 - `score.js`: the single source of truth: voice-line starts, every shot cut (placed in the pauses of the voiceover), comic hits, gimmick notes, captions (`subs.json`), sync markers.
-- `song.js`: loads the vidIQ voiceover (`assets/vo.wav`, Jessica, with 0.55 s pauses) and adds an original 100 BPM F-major bed (kick/clap/shaker, bass, pads, plucks), ducked ~8 dB under the voice, plus SFX and gimmick notes. Mastered to -14 LUFS, true peak ≤ -1.5 dBTP.
+- `song.js`: the soundtrack is the vidIQ voiceover only (`assets/vo.wav`), mastered to -14 LUFS, at the owner's request (no music or SFX). `MUSIC=1 node song.js` restores the original 100 BPM bed + SFX + gimmick notes.
 - `plane.js`: `Ch.eplane` / `Ch.eplaneFront`, a generic 19-seat high-wing plane with 10 ducted fans, built from `G.*` primitives.
 - `film.js`: 14 shots via `Shots.film` (whip/push/paper/zoom transitions in the voice pauses), `Subs.draw` pop captions inside the 9:16 safe area.
 
